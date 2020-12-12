@@ -38,7 +38,7 @@ pipeline {
       stage("TrainStatus") {
             steps {
               script {
-                    def response = sh """ 
+                    def response = sh ''' 
                     TrainingJobStatus=`aws sagemaker describe-training-job --training-job-name ${params.SAGEMAKER_TRAINING_JOB} | grep -Po '"'"TrainingJobStatus"'"\s*:\s*"\K([^"]*)'`
                     echo "$TrainingJobStatus"
                     while [ $TrainingJobStatus = "InProgress" ] ; do
@@ -46,7 +46,7 @@ pipeline {
                       echo "$TrainingJobStatus"
                       sleep 1m
                     done
-                    """
+                    '''
                     
                   }
               }
