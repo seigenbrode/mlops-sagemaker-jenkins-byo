@@ -67,7 +67,7 @@ pipeline {
               sh """
                if ! aws cloudformation describe-stacks --region us-east-1 --stack-name '${params.SAGEMAKER_TRAINING_JOB}' ; then
                   echo -e "\nStack does not exist, creating ..."
-                  aws cloudformation create-stack --region us-east-1 --stack-name '${params.SAGEMAKER_TRAINING_JOB}' --template-url '${S3_MODEL_ARTIFACTS}'/deploy/cfn-sagemaker-endpoint.yml --parameters  ParameterKey=ModelName,ParameterValue=\"${params.SAGEMAKER_TRAINING_JOB}-${env.BUILD_ID}\" ParameterKey=ModelDataUrl,ParameterValue='${S3_MODEL_ARTIFACTS}' ParameterKey=InferenceImage,ParameterValue="${params.ECRURI}:${env.BUILD_ID}" ParameterKey=InstanceType,ParameterValue='ml.t3.large'  ParameterKey=InstanceCount,ParameterValue='1' ParameterKey=RoleArn,ParameterValue="${params.SAGEMAKER_EXECUTION_ROLE_TEST}" ParameterKey=Environment,ParameterValue='Test'
+                  aws cloudformation create-stack --region us-east-1 --stack-name '${params.SAGEMAKER_TRAINING_JOB}' --template-body file://deploy/cfn-sagemaker-endpoint.yml --parameters  ParameterKey=ModelName,ParameterValue=\"${params.SAGEMAKER_TRAINING_JOB}-${env.BUILD_ID}\" ParameterKey=ModelDataUrl,ParameterValue='${S3_MODEL_ARTIFACTS}' ParameterKey=InferenceImage,ParameterValue="${params.ECRURI}:${env.BUILD_ID}" ParameterKey=InstanceType,ParameterValue='ml.t3.large'  ParameterKey=InstanceCount,ParameterValue='1' ParameterKey=RoleArn,ParameterValue="${params.SAGEMAKER_EXECUTION_ROLE_TEST}" ParameterKey=Environment,ParameterValue='Test'
                   echo "Waiting for stack to be created ..."
                   aws cloudformation wait stack-create-complete --region us-east-1 --stack-name "${params.SAGEMAKER_TRAINING_JOB}" 
                else
