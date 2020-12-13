@@ -74,7 +74,7 @@ pipeline {
                   echo -e "\nStack exists, attempting update ..."
                   set +e
                   update_output=\$( aws cloudformation update-stack --region us-east-1 --stack-name '${params.SAGEMAKER_TRAINING_JOB}' --template-url '${S3_MODEL_ARTIFACTS}'/deploy/cfn-sagemaker-endpoint.yml
-                  status=$?
+                  status=\$?
                   echo "\$update_output"
                   if [ \$status -ne 0 ] ; then
                   # Don't fail for no-op update
