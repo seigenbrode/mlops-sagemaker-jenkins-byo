@@ -65,15 +65,15 @@ pipeline {
       stage("DeployToTest") {
             steps { 
               sh """
-               if ! aws cloudformation describe-stacks --region us-east-1 --stack-name ${params.SAGEMAKER_TRAINING_JOB} ; then
+               if ! aws cloudformation describe-stacks --region us-east-1 --stack-name \"${params.SAGEMAKER_TRAINING_JOB}\" ; then
                   echo -e "\nStack does not exist, creating ..."
-                  aws cloudformation create-stack --region us-east-1 --stack-name ${params.SAGEMAKER_TRAINING_JOB} --template-url '${S3_MODEL_ARTIFACTS}'/deploy/cfn-sagemaker-endpoint.yml 
+                  aws cloudformation create-stack --region us-east-1 --stack-name \"${params.SAGEMAKER_TRAINING_JOB}\" --template-url '${S3_MODEL_ARTIFACTS}'/deploy/cfn-sagemaker-endpoint.yml 
                   echo "Waiting for stack to be created ..."
-                  aws cloudformation wait stack-create-complete --region us-east-1 --stack-name ${params.SAGEMAKER_TRAINING_JOB}  
+                  aws cloudformation wait stack-create-complete --region us-east-1 --stack-name \"${params.SAGEMAKER_TRAINING_JOB}\" 
                else
                   echo -e "\nStack exists, attempting update ..."
                   set +e
-                  update_output=$( aws cloudformation update-stack --region us-east-1 --stack-name ${params.SAGEMAKER_TRAINING_JOB} --template-url '${S3_MODEL_ARTIFACTS}'/deploy/cfn-sagemaker-endpoint.yml
+                  update_output=$( aws cloudformation update-stack --region us-east-1 --stack-name \"${params.SAGEMAKER_TRAINING_JOB}\" --template-url '${S3_MODEL_ARTIFACTS}'/deploy/cfn-sagemaker-endpoint.yml
                   echo "$update_output"
                   if [ $status -ne 0 ] ; then
                   # Don't fail for no-op update
@@ -86,7 +86,7 @@ pipeline {
                   fi
 
                echo "Waiting for stack update to complete ..."
-               aws cloudformation wait stack-update-complete --region us-east-1 --stack-name ${params.SAGEMAKER_TRAINING_JOB}
+               aws cloudformation wait stack-update-complete --region us-east-1 --stack-name \"${params.SAGEMAKER_TRAINING_JOB}\"
 
                fi
                echo "Finished create/update successfully!"
