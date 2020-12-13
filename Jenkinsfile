@@ -83,7 +83,7 @@ pipeline {
                       echo -e "\nFinished create/update - no updates to be performed"
                       exit 0
                     else
-                      exit $status
+                      exit \$status
                     fi
                   fi
 
