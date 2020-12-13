@@ -52,6 +52,16 @@ pipeline {
               }
       }
 
+      stage("PackageDeployment") {
+            steps { 
+              sh """
+               pwd
+               ls -la
+               aws s3 cp ./deploy/cfn-sagemaker-endpoint-test.yml '${S3_MODEL_ARTIFACTS}'/deploy/cfn-sagemaker-endpoint-test.yml
+              """
+             }
+        }
+
       stage("DeployToTest") {
             steps { 
               sh """
