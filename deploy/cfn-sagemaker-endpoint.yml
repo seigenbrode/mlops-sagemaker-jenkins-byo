@@ -6,7 +6,7 @@ Parameters:
   ModelDataUrl:
     Description: Location of model artifact
     Type: String
-  InferenceImage:
+  TrainingImage:
     Description: The container used to train the model
     Type: String
   InstanceType:
@@ -30,7 +30,7 @@ Resources:
     Properties: 
       Containers: 
         - 
-         Image: !Ref InferenceImage
+         Image: !Ref TrainingImage
          ModelDataUrl: !Ref ModelDataUrl
          Environment: {"SAGEMAKER_ENABLE_CLOUDWATCH_METRICS": "true", "SAGEMAKER_PROGRAM":"train_and_deploy.py", "SAGEMAKER_SUBMIT_DIRECTORY":"s3://sagemaker-us-east-1-980714697697/sagemaker-scikit-learn-2020-10-19-15-55-56-882/source/sourcedir.tar.gz"}
       ExecutionRoleArn: !Ref RoleArn
