@@ -71,14 +71,15 @@ pipeline {
                   echo "Waiting for stack to be created ..."
                   aws cloudformation wait stack-create-complete --region us-east-1 --stack-name "${params.SAGEMAKER_TRAINING_JOB}" 
                else
-                  echo -e "\nStack exists, attempting update ..."
+                  echo -e '\nStack exists, attempting update ...'
                   set +e
                   update_output=`aws cloudformation update-stack --region us-east-1 --stack-name \"${params.SAGEMAKER_TRAINING_JOB}'\" --template-url \"${S3_MODEL_ARTIFACTS}\"/deploy/cfn-sagemaker-endpoint.yml`
                   status=\$?
+                  set -e
                   echo \$update_output
                   if [ \$status -ne 0 ] ; then
                   # Don't fail for no-op update
-                    if [[ \$update_output == *"ValidationError"* && $update_output == *"No updates"* ]] ; then
+                    if [[ \$update_output == *"ValidationError"* && \$update_output == *"No updates"* ]] ; then
                       echo -e "\nFinished create/update - no updates to be performed"
                       exit 0
                     else
