@@ -57,7 +57,7 @@ pipeline {
               sh """
                pwd
                ls -la
-               aws s3 cp ./deploy/cfn-sagemaker-endpoint-test.yml '${S3_MODEL_ARTIFACTS}'/deploy/cfn-sagemaker-endpoint-test.yml
+               aws s3 cp deploy/cfn-sagemaker-endpoint-test.yml '${S3_MODEL_ARTIFACTS}'/deploy/cfn-sagemaker-endpoint-test.yml
               """
              }
         }
