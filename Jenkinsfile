@@ -57,7 +57,7 @@ pipeline {
               sh """
                pwd
                ls -la
-               aws s3 cp deploy/cfn-sagemaker-endpoint.yml '${S3_MODEL_ARTIFACTS}'/deploy/cfn-sagemaker-endpoint-test.yml
+               aws s3 cp deploy/cfn-sagemaker-endpoint.yml '${S3_MODEL_ARTIFACTS}'/deploy/cfn-sagemaker-endpoint.yml
               """
              }
         }
@@ -65,12 +65,31 @@ pipeline {
       stage("DeployToTest") {
             steps { 
               sh """
-               pwd
-               ls -la
-               aws sagemaker create-model --model-name ${params.SAGEMAKER_TRAINING_JOB}-${env.BUILD_ID}-Test --primary-container ContainerHostname=${env.BUILD_ID},Image=${params.ECRURI}:${env.BUILD_ID},ModelDataUrl='${S3_MODEL_ARTIFACTS}'/${params.SAGEMAKER_TRAINING_JOB}-${env.BUILD_ID}/output/model.tar.gz,Mode='SingleModel' --execution-role-arn ${params.SAGEMAKER_EXECUTION_ROLE_TEST}
-               aws sagemaker create-endpoint-config --endpoint-config-name ${params.SAGEMAKER_TRAINING_JOB}-${env.BUILD_ID}-Test --production-variants VariantName='single-model',ModelName=${params.SAGEMAKER_TRAINING_JOB}-${env.BUILD_ID}-Test,InstanceType='ml.m4.xlarge',InitialVariantWeight=1,InitialInstanceCount=1
-               aws sagemaker create-endpoint --endpoint-name ${params.SAGEMAKER_TRAINING_JOB}-${env.BUILD_ID}-Test --endpoint-config-name ${params.SAGEMAKER_TRAINING_JOB}-${env.BUILD_ID}-Test
-               sleep 300
+               if ! aws cloudformation describe-stacks --region us-east-1 --stack-name ${params.SAGEMAKER_TRAINING_JOB} ; then
+                  echo -e "\nStack does not exist, creating ..."
+                  aws cloudformation create-stack --region us-east-1 --stack-name ${params.SAGEMAKER_TRAINING_JOB} --template-url '${S3_MODEL_ARTIFACTS}'/deploy/cfn-sagemaker-endpoint.yml 
+                  echo "Waiting for stack to be created ..."
+                  aws cloudformation wait stack-create-complete --region us-east-1 --stack-name ${params.SAGEMAKER_TRAINING_JOB}  
+               else
+                  echo -e "\nStack exists, attempting update ..."
+                  set +e
+                  update_output=$( aws cloudformation update-stack --region us-east-1 --stack-name ${params.SAGEMAKER_TRAINING_JOB} --template-url '${S3_MODEL_ARTIFACTS}'/deploy/cfn-sagemaker-endpoint.yml
+                  echo "$update_output"
+                  if [ $status -ne 0 ] ; then
+                  # Don't fail for no-op update
+                    if [[ $update_output == *"ValidationError"* && $update_output == *"No updates"* ]] ; then
+                      echo -e "\nFinished create/update - no updates to be performed"
+                      exit 0
+                    else
+                      exit $status
+                    fi
+                  fi
+
+               echo "Waiting for stack update to complete ..."
+               aws cloudformation wait stack-update-complete --region us-east-1 --stack-name ${params.SAGEMAKER_TRAINING_JOB}
+
+               fi
+               echo "Finished create/update successfully!"
               """
              }
         }
