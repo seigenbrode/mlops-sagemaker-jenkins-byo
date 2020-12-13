@@ -69,7 +69,7 @@ pipeline {
                   echo -e "\nStack does not exist, creating ..."
                   aws cloudformation create-stack --region us-east-1 --stack-name '${params.SAGEMAKER_TRAINING_JOB}' --template-url '${S3_MODEL_ARTIFACTS}'/deploy/cfn-sagemaker-endpoint.yml 
                   echo "Waiting for stack to be created ..."
-                  aws cloudformation wait stack-create-complete --region us-east-1 --stack-name '${params.SAGEMAKER_TRAINING_JOB}' 
+                  aws cloudformation wait stack-create-complete --region us-east-1 --stack-name "${params.SAGEMAKER_TRAINING_JOB}" 
                else
                   echo -e "\nStack exists, attempting update ..."
                   set +e
