@@ -12,7 +12,7 @@ Parameters:
   InstanceType:
     Description: Instance type
     Type: String
-    Default: ml.t3.large
+    Default: ml.t2.medium
   InstanceCount:
     Description: Instance count
     Type: String
