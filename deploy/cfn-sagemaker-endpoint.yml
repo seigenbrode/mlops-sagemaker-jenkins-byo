@@ -44,12 +44,11 @@ Resources:
   Endpoint:
     Type: "AWS::SageMaker::Endpoint"
     Properties: 
-       EndpointConfigName: !GetAtt EndpointConfig.EndpointConfigName
-       EndpointName: 
+      EndpointConfigName: !GetAtt EndpointConfig.EndpointConfigName
+      EndpointName: 
         Fn::Join:
           - ""
-          - - "scikit-byo"
-            - "-"
+          - - "scikit-byo-"
             - !Ref Environment
  
   EndpointConfig:
