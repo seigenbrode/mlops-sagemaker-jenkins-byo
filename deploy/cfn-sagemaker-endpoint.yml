@@ -46,7 +46,7 @@ Resources:
     Properties: 
        EndpointConfigName: !GetAtt EndpointConfig.EndpointConfigName
        EndpointName: 
-          Fn::Join:
+        Fn::Join:
           - ""
           - - "scikit-byo"
             - "-"
