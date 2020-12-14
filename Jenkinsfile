@@ -78,7 +78,7 @@ pipeline {
                   fi
 
                echo "Waiting for stack update to complete ..."
-               aws cloudformation wait stack-update-complete --region us-east-1 --stack-name '${params.SAGEMAKER_TRAINING_JOB}'
+               aws cloudformation wait stack-update-complete --region us-east-1 --stack-name '${params.SAGEMAKER_TRAINING_JOB}'-test
 
                fi
                echo "Finished create/update successfully!"
