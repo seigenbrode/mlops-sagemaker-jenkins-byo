@@ -1,9 +1,9 @@
 # MLOps: Jenkins & Bring-Your-Own-Algorithm
 
-In this workshop, we will focus on building a pipeline to train and deploy a model using Amazon SageMaker training instances and hosting on persistent Sagemaker endpoint instance(s).  The orhestration of the training and deployment will be done through [Jenkins](https://www.jenkins.io/).  
+In this workshop, we will focus on building a pipeline to train and deploy a model using Amazon SageMaker training instances and hosting on persistent Sagemaker endpoint instance(s).  The orchestration of the training and deployment will be done through [Jenkins](https://www.jenkins.io/).  
 
 
-Applying DevOps practices to Machine Learning (ML) workloads is a fundamental practice to ensure machine learning workloads are deployed using a consistent methodology with traceability, consistenc, governance and quality gates. MLOps involves applying practices such as CI/CD,Continuous Monitoring, and Feedback Loops to the Machine Learning Development Lifecycle. This workshop will focus primarily on setting up a base deployment pipeline in Jenkins.  The expectation would be to continue to iterate on a base pipeline incorporating more quality checks and and pipeline features including the consideration for an data worflow pipeline.  
+Applying DevOps practices to Machine Learning (ML) workloads is a fundamental practice to ensure machine learning workloads are deployed using a consistent methodology with traceability, consistency, governance and quality gates. MLOps involves applying practices such as CI/CD,Continuous Monitoring, and Feedback Loops to the Machine Learning Development Lifecycle. This workshop will focus primarily on setting up a base deployment pipeline in Jenkins.  The expectation would be to continue to iterate on a base pipeline incorporating more quality checks and pipeline features including the consideration for a data worflow pipeline.  One component that we often see in a pipeline or between the hand-off of model build and model deploy activities is a model registry.   That is not in scope for this base pipeline but should be considered as you iterate on your pipeline.  
 
  There is no one-size-fits-all model for creating a pipeline; however, the same general concepts explored in this lab can be applied and extended across various services or tooling to meet the same end result.  
 
@@ -31,9 +31,13 @@ The stages above are broken out into:
 
 **SmokeTest:** Ensure we are able run prediction requests against deployed endpoint
 
-**DeployToProd:** Package model, configure model production endpoint, and deploy production endpoint using Amazon SageMaker Hosting Instances 
+**DeployToProd:** Package model, configure model production endpoint, and deploy production endpoint using AWS CloudFormation deploying to Amazon SageMaker Hosting Instances 
 
-*Note: For this workshop, we are deploying to 2 environments (Test/Production). In reality, this number will vary depending on your environment and the workload.*
+*Note: For this workshop, we are deploying to 2 environments (Test/Production). In reality, this number will vary depending on your environment and the workload.  For simplicity in the lab, we deploy both to a single AWS account.  However, AWS best practices for governance and workload isolation typically include deploy across accounts.*
+
+The architecture used for the pipeline steps is shown below: 
+
+![BYO Workshop](images/mlops-jenkins-BaseLab.png)
 
 -------
 ## Prerequisite
@@ -71,8 +75,8 @@ The steps below are included for the setup of AWS resources we will be using in 
 
 In this workshop, we are using Jenkins as the Docker build server; however, you can also choose to use a secondary build environment such as [AWS Code Build](https://aws.amazon.com/codebuild) as a managed build environment that also integrates with other orchestration tools such as Jenkins. Below we are creating an Elastic Container Registry (ECR) where we will push our built docker images.   
 
-1) Login to the AWS Account provided: https://console.aws.amazon.com
- 
+1) Login to the AWS Account provided
+
 2) Verify you are in **us-east-1/N.Virginia**
 
 3) Go to **Services** -> Select **Elastic Container Registry**
@@ -140,15 +144,14 @@ Create the IAM Role we will use for executing SageMaker calls from our Jenkins p
 In this step, we'll explore the Lambda Helper Functions that were created to facilitate the integration of SageMaker training and deployment into a Jenkins pipeline:
 
 1. Go to **Services** -> Select **Lambda**
-2. You'll see Lambda Functions that will be used by our pipeline.  Each is described below but you can also select the function and check out the code directly. 
+2. You'll see a Lambda Function that will be used by our pipeline.  The function is described below but you can also select the function and check out the code directly. 
 
 The description of each Lambda function is included below:
+ 
+-	**MLOps-InvokeEndpoint-scikitbyo:** This Lambda function is triggered during our "TestEvaluate" stage in the pipeline where we are checking to ensure that our inference code is in sync with our training code by running a few sample requests for prediction to the deployed test endpoint.  We are running this step before committing our newly trained model to a higher level environment.  
 
--	**MLOps-CheckTrainingStatus:**  This Lambda function is called from the pipeline and responsible for checking back in on the status of the previous call to create and execute a training job.  This is in place because while we may get a successful reesponse back immediately on our Create Training Job request, that response indicates the request for training was successfully submitted.  It does not mean training executed successfully so we need to include additional logic to check back in on the status of the training job until the job fails ('Failed') or succeeds ('Completed').  We only want out pipeline to proceed when the training step completes successfully. 
--	**MLOps-InvokeEndpoint-scikitbyo:** This Lambda function is triggered during our "Smoke Test" stage in the pipeline where we are checking to ensure that our inference code is in sync with our training code by running a few sample requests for prediction to the deployed test endpoint.  We are running this step before committing our newly trained model to a higher level environment.  
 
-
-*Note: While the Lambda functions above have been predeployed in our AWS Account, they are also included in the /lambdas folder of this repo if you want to deploy them following this workshop into your own AWS Accounts.  A  [CloudFormation](https://aws.amazon.com/cloudformation/) template is also included as well to depoy using the [AWS Serverless Application Model](https://aws.amazon.com/serverless/sam/)
+*Note: While the Lambda function above has been predeployed in our AWS Account, they are also included in the /lambdas folder of this repo if you want to deploy them following this workshop into your own AWS Accounts.  A  [CloudFormation](https://aws.amazon.com/cloudformation/) template is also included as well to depoy using the [AWS Serverless Application Model](https://aws.amazon.com/serverless/sam/)
 
 ---
 
@@ -164,11 +167,11 @@ In this step, we will create a new pipeline that we'll use to:
 
    4) Train our model using Amazon SageMaker Training Instances
     
-   5) Deploy our model to a Test endpoint using Amazon SageMaker Hosting Instances 
+   5) Deploy our model to a Test endpoint using CloudFormaton to deploy to Amazon SageMaker Hosting Instances 
 
    6) Execute a smoke test to ensure our training and inference code are in sync
 
-   7) Deploy our model to a Production endpoint using Amazon SageMaker Hosting Instances
+   7) Deploy our model to a Production endpoint using CloudFormaton to deploy to Amazon SageMaker Hosting Instances
 
 ## Step 5: Configure the Jenkins Pipeline
 
@@ -219,27 +222,27 @@ In this step, we will create a new pipeline that we'll use to:
        - **Name:** S3_MODEL_ARTIFACTS
        - **Default Value:** *Enter the bucket we created above in the format: s3://*initials*-jenkins-scikitbyo-modelartifact
 
-  * Parameter #5: Training Job Name 
+   * Parameter #5: Training Job Name 
        - **Type:** String
        - **Name:** SAGEMAKER_TRAINING_JOB
        - **Default Value:** scikit-byo-*yourinitials*
 
-  * Parameter #6: Lambda Function - Training Status 
+    * Parameter #6: Lambda Function - Training Status 
        - **Type:** String
        - **Name:** LAMBDA_CHECK_STATUS_TRAINING
        - **Default Value:** MLOps-CheckTrainingStatus
 
-  * Parameter #7: S3 Bucket w/ Training Data
+    * Parameter #7: S3 Bucket w/ Training Data
        - **Type:** String
        - **Name:** S3_TRAIN_DATA
        - **Default Value:** s3://0.model-training-data/train/train.csv     
 
-   * Parameter #8: S3 Bucket w/ Training Data
+    * Parameter #8: S3 Bucket w/ Training Data
        - **Type:** String
        - **Name:** S3_TEST_DATA
        - **Default Value:** 0.model-training-data    
 
-   * Parameter #9: Lambda Function - Smoke Test
+    * Parameter #9: Lambda Function - Smoke Test
        - **Type:** String
        - **Name:** LAMBDA_EVALUATE_MODEL
        - **Default Value:** MLOps-InvokeEndpoint-scikitbyo
@@ -313,7 +316,9 @@ Jenkins allows for the abiliity to create additional pipeline triggers and embed
 You've setup your base Jenkins pipeline for building your custom machine learning containers to train and host on Amazon SageMaker.  You can continue to iterate and add in more functionality including items such as: 
 
  * A/B Testing 
- * Endpoint Cleanup
+ * Model Registry
+ * Data Pre-Processing 
+ * Feature Store Integration
  * Additional Quality Gates
  * Retraining strategy
  * Include more sophisticated logic in the pipeline such as [Inference Pipeline](https://docs.aws.amazon.com/sagemaker/latest/dg/inference-pipelines.html), [Multi-Model Endpoint](https://docs.aws.amazon.com/sagemaker/latest/dg/multi-model-endpoints.html)
