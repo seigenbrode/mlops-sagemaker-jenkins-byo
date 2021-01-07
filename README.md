@@ -3,7 +3,9 @@
 In this workshop, we will focus on building a pipeline to train and deploy a model using Amazon SageMaker training instances and hosting on persistent Sagemaker endpoint instance(s).  The orchestration of the training and deployment will be done through [Jenkins](https://www.jenkins.io/).  
 
 
-Applying DevOps practices to Machine Learning (ML) workloads is a fundamental practice to ensure machine learning workloads are deployed using a consistent methodology with traceability, consistency, governance and quality gates. MLOps involves applying practices such as CI/CD,Continuous Monitoring, and Feedback Loops to the Machine Learning Development Lifecycle. This workshop will focus primarily on setting up a base deployment pipeline in Jenkins.  The expectation would be to continue to iterate on a base pipeline incorporating more quality checks and pipeline features including the consideration for a data worflow pipeline.  One component that we often see in a pipeline or between the hand-off of model build and model deploy activities is a model registry.   That is not in scope for this base pipeline but should be considered as you iterate on your pipeline.  
+Applying DevOps practices to Machine Learning (ML) workloads is a fundamental practice to ensure machine learning workloads are deployed using a consistent methodology with traceability, consistency, governance and quality gates. MLOps involves applying practices such as CI/CD,Continuous Monitoring, and Feedback Loops to the Machine Learning Development Lifecycle. 
+
+This workshop will focus primarily on setting up a base deployment pipeline in Jenkins.  The expectation would be to continue to iterate on a base pipeline incorporating more quality checks and pipeline features including the consideration for a data worflow pipeline.  One component that we often see in a pipeline or between the hand-off of model build and model deploy activities is a model registry.   That is not in scope for this base pipeline but should be considered as you iterate on your pipeline.  
 
  There is no one-size-fits-all model for creating a pipeline; however, the same general concepts explored in this lab can be applied and extended across various services or tooling to meet the same end result.  
 
@@ -51,15 +53,15 @@ The architecture used for the pipeline steps is shown below:
 
 ## Lab Overview
 
-This lab is based on the [scikit_bring_your_own](https://github.com/awslabs/amazon-sagemaker-examples/blob/master/advanced_functionality/scikit_bring_your_own/scikit_bring_your_own.ipynb) SageMaker example notebook.  Please reference the notebook for detailed description on the use case as well as the custom code for training, inference, and creating the docker container for use with SageMaker.  Although Amazon SageMaker now has native integrations for [Scikit](https://aws.amazon.com/blogs/machine-learning/amazon-sagemaker-adds-scikit-learn-support/), this notebook example does not rely on those integrations so is representative of any BYO* use case.  
+This lab is based on the [scikit_bring_your_own](https://github.com/awslabs/amazon-sagemaker-examples/blob/master/advanced_functionality/scikit_bring_your_own/scikit_bring_your_own.ipynb) SageMaker example notebook.  Please reference the notebook for detailed description on the use case as well as the custom code for training, inference, and creating the docker container for use with SageMaker.  
+
+Although Amazon SageMaker now has native integrations for [Scikit](https://aws.amazon.com/blogs/machine-learning/amazon-sagemaker-adds-scikit-learn-support/), this notebook example does not rely on those integrations so is representative of any BYO* use case.  
 
 Using the same code (with some minor modifications) from the SageMaker example notebook, we will utilize this GitHub repository as our source repository and our SCM into our Jenkins pipeline. 
 
 * *Optional: You can also choose to fork this repository if you want to modify code as part of your pipeline experiments. If you fork this repository, please ensure you update github configuration references within the lab* 
 
-This lab will walk you through the steps required to:
-
-• Setup a base pipeline responsible for orchestration of workflow to build and deploy custom ML models to target environments
+This lab will walk you through the steps required to setup a base pipeline responsible for orchestration of workflow to build and deploy custom ML models to target environments
 
 For this lab, we will perform a lot of steps manually in AWS that would typically be performed through Infrastructure-as-Code using a service like [CloudFormation](https://aws.amazon.com/cloudformation/). For the purposes of the lab, we will go step-by-step on the console so attendees become more familiar with expected inputs and artifacts part of a ML deployment pipeline.  
 
@@ -73,7 +75,7 @@ The steps below are included for the setup of AWS resources we will be using in 
 
 ## Step 1: Create Elastic Container Registry (ECR)
 
-In this workshop, we are using Jenkins as the Docker build server; however, you can also choose to use a secondary build environment such as [AWS Code Build](https://aws.amazon.com/codebuild) as a managed build environment that also integrates with other orchestration tools such as Jenkins. Below we are creating an Elastic Container Registry (ECR) where we will push our built docker images.   
+In this workshop, we are using Jenkins as the Docker build server; however, you can also choose to use a secondary build environment such as [AWS Code Build](https://aws.amazon.com/codebuild) as a managed build environment that also integrates with other orchestration tools such as Jenkins. Below we are creating an Elastic Container Registry (ECR) where we will push our built docker images. This images we push to this registry will become input container images used for our SageMaker training and deployment.   
 
 1) Login to the AWS Account provided
 
@@ -91,6 +93,7 @@ In this workshop, we are using Jenkins as the Docker build server; however, you 
 
 5) Click **Create repository**
 6) Confirm your repository is in the list of repositories
+7) You will need your repository URI in a later step so copy that URI for later. 
 
 ## Step 2: Create Model Artifact Repository
 
@@ -129,7 +132,7 @@ Create the IAM Role we will use for executing SageMaker calls from our Jenkins p
 
 8) Click **Create role**
 
-9) You will receive a notice the role has been created, click on the link and make sure grab the arn for the role we just created as we will use it later. 
+9) You will receive a notice the role has been created, click on the link to the role and make sure grab the arn for the role we just created as we will use it later. 
 
 ![BYO Workshop Setup](images/SageMaker-IAM.png)
 
@@ -191,7 +194,7 @@ In this step, we will create a new pipeline that we'll use to:
 
 * **Description:** Enter a description for the pipeline
 
-* Select **GitHub project** & Enter the following project url: https://github.com/seigenbrode/byo-scenario
+* Select **GitHub project** & Enter the following project url: https://github.com/seigenbrode/mlops-sagemaker-jenkins-byo
 
 
 ![BYO Workshop Setup](images/Jenkins-NewItem-1.png)
@@ -212,6 +215,8 @@ In this step, we will create a new pipeline that we'll use to:
        - **Name:** LAMBDA_EXECUTION_ROLE_TEST
        - **Default Value:** arn:aws:iam::*<InsertAccount#>*:role/MLOps-Jenkins-LambdaExecution
 
+       *Tip: Your account number can be found in the ECRURI above*
+
    * Parameter #3: SageMaker Execution Role 
        - **Type:** String
        - **Name:** SAGEMAKER_EXECUTION_ROLE_TEST
@@ -227,27 +232,22 @@ In this step, we will create a new pipeline that we'll use to:
        - **Name:** SAGEMAKER_TRAINING_JOB
        - **Default Value:** scikit-byo-*yourinitials*
 
-    * Parameter #6: Lambda Function - Training Status 
-       - **Type:** String
-       - **Name:** LAMBDA_CHECK_STATUS_TRAINING
-       - **Default Value:** MLOps-CheckTrainingStatus
-
-    * Parameter #7: S3 Bucket w/ Training Data
+    * Parameter #6: S3 Bucket w/ Training Data
        - **Type:** String
        - **Name:** S3_TRAIN_DATA
        - **Default Value:** s3://0.model-training-data/train/train.csv     
 
-    * Parameter #8: S3 Bucket w/ Training Data
+    * Parameter #7: S3 Bucket w/ Training Data
        - **Type:** String
        - **Name:** S3_TEST_DATA
        - **Default Value:** 0.model-training-data    
 
-    * Parameter #9: Lambda Function - Smoke Test
+    * Parameter #8: Lambda Function - Smoke Test
        - **Type:** String
        - **Name:** LAMBDA_EVALUATE_MODEL
        - **Default Value:** MLOps-InvokeEndpoint-scikitbyo
 
-   * Parameter #10: Default Docker Environment
+   * Parameter #9: Default Docker Environment
        - **Type:** String
        - **Name:** JENKINSHOME
        - **Default Value:** /bitnami/jenkins/jenkins_home/.docker
@@ -263,7 +263,9 @@ In this step, we will create a new pipeline that we'll use to:
 
    * **SCM:** Select **Git** from dropdown
 
-   * **Repository URL:** https://github.com/seigenbrode/byo-scenario
+   * **Repository URL:** https://github.com/seigenbrode/mlops-sagemaker-jenkins-byo
+
+   * **Branches to Build:** */main
 
    * **Credentials:** -none- *We are pulling from a public repo* 
 
@@ -271,7 +273,7 @@ In this step, we will create a new pipeline that we'll use to:
 
 7) Leave all other values default and click **Save**
 
-We are now ready to trigger our pipeline.  But first, we need to explore the purpose of Jenkinsfile.  Jenkins allows for many types of pipelines such as free style projects, pipelines (declarative / scripted), and external jobs.  In our original setup we selected [Pipeline](https://www.jenkins.io/doc/book/pipeline/getting-started/).  Our Git Repository also has a file named *Jenksfile* which contains the scripted flow of stages and steps for our pipeline in Jenkin's declarative pipeline language.  
+We are now ready to trigger our pipeline.  But first, let's explore the purpose of Jenkinsfile.  Jenkins allows for many types of pipelines such as free style projects, pipelines (declarative / scripted), and external jobs.  In our original setup we selected [Pipeline](https://www.jenkins.io/doc/book/pipeline/getting-started/).  Our Git Repository also has a file named *Jenksfile* which contains the scripted flow of stages and steps for our pipeline in Jenkin's declarative pipeline language.  This is often referred to as pipeline-as-code as we can programmatically modify our pipelines and also ensure it remains under source control.
 
 ---
 
@@ -279,7 +281,7 @@ We are now ready to trigger our pipeline.  But first, we need to explore the pur
 
 In this step, we will execute the pipeline manually and then we will later demonstrate executing the pipeline automatically via a push to our connected Git Repository.  
 
-Jenkins allows for the abiliity to create additional pipeline triggers and embed step logic for more sophisticated pipelines.Another common trigger would be for retraining based on a schedule, data drift, or a PUT of new training data to S3. 
+Jenkins allows for the ability to create additional pipeline triggers and embed step logic for more sophisticated pipelines.Another common trigger would be for retraining based on a schedule, data drift, or a PUT of new training data to S3. 
 
 1. Let's trigger the first execution of our pipeline. While you're in the Jenkins Portal, select the pipeline you created above:  
 
@@ -303,7 +305,7 @@ Jenkins allows for the abiliity to create additional pipeline triggers and embed
 ![BYO Workshop Setup](images/ECR-Repo-Push.png)
 
 
-6. When you're pipeline reaches the **TrainModel** stage, you can checkout more details about training because we are reaching out to utilize Amazon SageMaker training instances during our training.  Go To [Amazon SageMaker Training Jobs](https://console.aws.amazon.com/sagemaker/home?region=us-east-1#/jobs).  You can click on your job and review the details of your training job, check out the monitoring metrics.  
+6. When your pipeline reaches the **TrainModel** stage, you can checkout more details about your model training within SageMaker.  While we use Jenkins to orchestrate the kickoff of our training, we are still utilizing Amazon SageMaker training features &  instances for this step.  Go To [Amazon SageMaker Training Jobs](https://console.aws.amazon.com/sagemaker/home?region=us-east-1#/jobs).  You can click on your job and review the details of your training job as well as check out the system monitoring metrics.  
 
 7. When the pipeline has completed the **TrainStatus** stage, the model has been trained and you will be able to find your deployable model artifact in the S3 bucket we created earlier.  Go To [S3](https://s3.console.aws.amazon.com/s3/home?region=us-east-1) and find your bucket to view your model artifact: *yourinitials*-jenkins-scitkitbyo-modelartifact
 
