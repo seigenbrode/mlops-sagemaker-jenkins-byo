@@ -89,15 +89,15 @@ pipeline {
 
       stage("TestEvaluate") {
             steps { 
-              script {
-                 def response = sh """ 
-                 aws lambda invoke --function-name ${params.LAMBDA_EVALUATE_MODEL} --cli-binary-format raw-in-base64-out --region us-east-1 --payload '{"EndpointName": "'${env.END_POINT}'-Test","Env": "Test", "Body": {"Payload": {"S3TestData": "${params.S3_TEST_DATA}", "S3Key": "test.csv"}}}' evalresponse.json
-                 result="$( cat evalresponse.json )"
-                 [[ $result -eq "success" ]] || { echo > "Smoke Test Failed"; exit 1; }
-              """
+				withAWS(region:'us-east-1') {
+					def result = invokeLambda(
+							functionName: ${params.LAMBDA_EVALUATE_MODEL} ,
+							payload: [ "EndpointName": "'${env.END_POINT}'-Test","Env": "Test", "S3TestData": "${params.S3_TEST_DATA}", "S3Key": "test.csv" ]
+					)
+					println result
+				}
               }
             }
-        }
 
       stage("DeployToProd") {
             steps { 
