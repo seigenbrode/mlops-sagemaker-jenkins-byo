@@ -20,14 +20,14 @@ pipeline {
             steps { 
               script {
                  def response = sh ''' 
-                 aws lambda invoke --function-name MLOps-InvokeEndpoint-scikitbyo --cli-binary-format raw-in-base64-out --region us-east-1 --payload '{"EndpointName": "scikit-byo-Test1","Env": "Test", "Body": {"Payload": {"S3TestData": "jenkins-scikitbyo-data1", "S3Key": "test.csv"}}}' evalresponse.json		
+                 aws lambda invoke --function-name MLOps-InvokeEndpoint-scikitbyo --cli-binary-format raw-in-base64-out --region us-east-1 --payload '{"EndpointName": "scikit-byo-Test","Env": "Test", "Body": {"Payload": {"S3TestData": "jenkins-scikitbyo-data1", "S3Key": "test.csv"}}}' evalresponse.json		
               '''
 		result = readFile('evalresponse.json').trim()
 		if (result == '"failed"'){
-		      echo 'The Test Endpoint as Failed'
+		      echo 'The Test Endpoint has Failed'
 		      }
 		      else{
-		       echo 'The Test Endpoint as Succeded'
+		       echo 'The Test Endpoint has Succeded'
 		      }
               }
             }
