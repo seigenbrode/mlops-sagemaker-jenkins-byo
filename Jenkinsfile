@@ -25,9 +25,11 @@ pipeline {
 		result = readFile('evalresponse.json').trim()
 		if (result == '"failed"'){
 		      echo 'The Test Endpoint has Failed'
+		      println result
 		      }
 		      else{
 		       echo 'The Test Endpoint has Succeded'
+		       println result
 		      }
               }
             }
