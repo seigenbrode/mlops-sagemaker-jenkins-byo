@@ -20,9 +20,7 @@ pipeline {
             steps { 
               script {
                  def response = sh """ 
-                 aws lambda invoke --function-name ${params.LAMBDA_EVALUATE_MODEL} 
-				 --cli-binary-format raw-in-base64-out --region us-east-1 
-				 --payload '{"EndpointName": "'${env.END_POINT}'-Test","Env": "Test"}' evalresponse.json
+                 aws lambda invoke --function-name ${params.LAMBDA_EVALUATE_MODEL}  --cli-binary-format raw-in-base64-out --region us-east-1 --payload '{"EndpointName": "'${env.END_POINT}'-Test","Env": "Test"}' evalresponse.json
                  return "$( cat evalresponse.json )"                 
               """
 			  println response
