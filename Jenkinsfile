@@ -18,9 +18,8 @@ pipeline {
       
       stage("TestEvaluate") {
             steps { 
-		    script {
 			withAWS(region:'us-east-1') {
-				String result= invokeLambda(
+			      invokeLambda(
 					functionName: "${params.LAMBDA_EVALUATE_MODEL}" ,
 					payload: [ "EndpointName": "${env.END_POINT}-Test","Env": "Test", "S3TestData": "${params.S3_TEST_DATA}", "S3Key": "test.csv" ]
 					)	
@@ -28,7 +27,6 @@ pipeline {
 				}
 			   println "This is a test"
 			   return
-		    }
               }
             }
 
