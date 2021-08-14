@@ -22,7 +22,7 @@ pipeline {
                  def response = sh ''' 
                  aws lambda invoke --function-name MLOps-InvokeEndpoint-scikitbyo --cli-binary-format raw-in-base64-out --region us-east-1 --payload '{"EndpointName": "scikit-byo-Test1","Env": "Test", "Body": {"Payload": {"S3TestData": "jenkins-scikitbyo-data", "S3Key": "test.csv"}}}' evalresponse.json		
               '''
-		result = readFile('commandResult').trim()
+		result = readFile('evalresponse.json').trim()
 		println result
               }
             }
