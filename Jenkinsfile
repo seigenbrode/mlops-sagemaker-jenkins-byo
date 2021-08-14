@@ -20,9 +20,10 @@ pipeline {
             steps { 
 		    script {
 			withAWS(region:'us-east-1') {
-				exit 0
+				
 				}
-			   
+			   println "This is a test"
+			   exit 0
 		    }
               }
             }
