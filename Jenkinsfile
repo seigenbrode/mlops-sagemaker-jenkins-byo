@@ -87,9 +87,7 @@ pipeline {
              }
         }
 	    
-	    
-	stages {
-	      stage("TestEvaluate") {
+	stage("TestEvaluate") {
 		    steps { 
 			script {
 					    sh 'echo "Invoking Lambda for Testing Endpoint"'
@@ -107,8 +105,7 @@ pipeline {
 					}
 		    }
 		      }
-		}    	    
-
+	
 
       stage("DeployToProd") {
             steps { 
