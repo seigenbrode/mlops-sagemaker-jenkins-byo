@@ -253,12 +253,12 @@ In this step, we will create a new pipeline that we'll use to:
     * Parameter #6: S3 Bucket w/ Training Data
        - **Type:** String
        - **Name:** S3_TRAIN_DATA
-       - **Default Value:** s3://0.model-training-data/train/train.csv     
+       - **Default Value:** s3://*yourinitials*-jenkins-scikitbyo-data/train.csv   
 
     * Parameter #7: S3 Bucket w/ Training Data
        - **Type:** String
        - **Name:** S3_TEST_DATA
-       - **Default Value:** 0.model-training-data    
+       - **Default Value:** *yourinitials*-jenkins-scikitbyo-data    
 
     * Parameter #8: Lambda Function - Smoke Test
        - **Type:** String
