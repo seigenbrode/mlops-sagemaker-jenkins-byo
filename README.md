@@ -127,7 +127,7 @@ Create the S3 bucket that we will use for storing our test and train data.  The 
 
    * Leave all other settings as default, click **Create bucket**
    
- 4) Copy the train, test files from the data directory to the bucket : https://github.com/chethancmk/mlops-sagemaker-jenkins-byo/tree/master/data
+ 4) Copy the train, test files from the data directory to the bucket. [Data Files](https://github.com/chethancmk/mlops-sagemaker-jenkins-byo/tree/master/data)
 
 ## Step 4: Create SageMaker Execution Role
 
