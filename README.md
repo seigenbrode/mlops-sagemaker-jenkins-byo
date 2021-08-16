@@ -111,7 +111,25 @@ Create the S3 bucket that we will use as our packaged model artifact repository.
 
    * Leave all other settings as default, click **Create bucket**
 
-## Step 3: Create SageMaker Execution Role
+## Step 3: Create Bucket for Training/Testing Data. Copy files to the Bucket
+
+Create the S3 bucket that we will use for storing our test and train data.  The training job will use the train.csv from the bucket to train the model. The testing lambda function will use the test.csv to smoke test the end point
+
+1) From your AWS Account, go to **Services**-->**S3**
+
+2) Click  **Create bucket**
+
+3) Under **Create Bucket / General Configuration**:
+ 
+   * **Bucket name:** *yourinitials*-jenkins-scikitbyo-data
+     
+      *Example: jd-jenkins-scikitbyo-modelartifact*
+
+   * Leave all other settings as default, click **Create bucket**
+   
+ 4) Copy the train, test files from the data directory to the bucket : https://github.com/chethancmk/mlops-sagemaker-jenkins-byo/tree/master/data
+
+## Step 4: Create SageMaker Execution Role
 
 Create the IAM Role we will use for executing SageMaker calls from our Jenkins pipeline  
 
@@ -142,19 +160,19 @@ Create the IAM Role we will use for executing SageMaker calls from our Jenkins p
 
 *Note: In a real world scenario, we would want to limit these privileges significantly to only the privileges needed.  This is only done for simplicity in the workshop.*
 
-## Step 4: Explore Lambda Helper Functions
+## Step 5: Create the Lambda Helper function
 
-In this step, we'll explore the Lambda Helper Functions that were created to facilitate the integration of SageMaker training and deployment into a Jenkins pipeline:
+In this step, we'll create the Lambda Helper Functions that to facilitate the integration of SageMaker training and deployment into a Jenkins pipeline:
 
 1. Go to **Services** -> Select **Lambda**
-2. You'll see a Lambda Function that will be used by our pipeline.  The function is described below but you can also select the function and check out the code directly. 
+2. Create a function MLOps-InvokeEndpoint-scikitbyo with Python 3.8 as the run time. 
+3. Upload the lambda zip code from the /lambdas folder of this repo  [Github Link](https://github.com/chethancmk/mlops-sagemaker-jenkins-byo/tree/master/lambda)
+4. Update the Lambda permissions to have access to S3, Sagemaker and Clouwatch
 
 The description of each Lambda function is included below:
  
 -	**MLOps-InvokeEndpoint-scikitbyo:** This Lambda function is triggered during our "TestEvaluate" stage in the pipeline where we are checking to ensure that our inference code is in sync with our training code by running a few sample requests for prediction to the deployed test endpoint.  We are running this step before committing our newly trained model to a higher level environment.  
 
-
-*Note: While the Lambda function above has been predeployed in our AWS Account, they are also included in the /lambdas folder of this repo if you want to deploy them following this workshop into your own AWS Accounts.  A  [CloudFormation](https://aws.amazon.com/cloudformation/) template is also included as well to depoy using the [AWS Serverless Application Model](https://aws.amazon.com/serverless/sam/)
 
 ---
 
